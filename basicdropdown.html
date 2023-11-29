@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        var createScene = function () {
+        
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+        
+            // This creates and positions a free camera (non-mesh)
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, ), scene);
+        
+            // This targets the camera to scene origin
+            camera.setTarget(BABYLON.Vector3.Zero());
+        
+            // This attaches the camera to the canvas
+            camera.attachControl(canvas, true);
+        
+            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+        
+            // Default intensity is 1. Let's dim the light a small amount
+            light.intensity = 0.7;
+        
+        
+            // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
+            var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
+        
+            // GUI
+            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+        
+            var dropdownA = new MenuOptions(advancedTexture, {width: 180, height: 40});
+            dropdownA.button.children[0].text = "drop it down";
+            dropdownA.top = "100px";
+            dropdownA.left = "200px";
+            dropdownA.addOption("Option A", function() {
+                alert("Option A");
+            });
+            dropdownA.addOption("Option B", function() {
+                alert("Option B");
+            });
+            dropdownA.addOption("Option C", function() {
+                alert("Option C");
+            });
+            dropdownA.addOption("Option D", function() {
+                alert("Option D");
+            });
+        
+            return scene;
+        };
+        
+        class MenuOptions
+        {
+        	constructor(advancedTexture, options = {})
+        	{
+        		let width = (options.width || 180)+"px";
+                this.height = (options.height || 40)+"px";
+                this.color = options.color || "black";
+                this.background = options.background || "white";
+        
+        		this.advancedTexture = advancedTexture;
+        
+                // Container
+        		this.container = new BABYLON.GUI.Container();
+                this.container.width = width;
+                this.container.verticalAlignment = options.align || BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+        		this.container.horizontalAlignment = options.valign || BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                this.container.isHitTestVisible = false;
+        
+                // Primary button
+                this.button = BABYLON.GUI.Button.CreateSimpleButton(null, "Please Select");
+                this.button.height = this.height;
+                this.button.background = this.background;
+                this.button.color = this.color;
+                this.button.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+        
+                // Options panel
+                this.options = new BABYLON.GUI.StackPanel();
+                this.options.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+                this.options.top = this.height;		
+                this.options.isVisible = false;
+                this.options.isVertical = true;
+        
+               this.button.onPointerUpObservable.add(() => {
+                    this.options.isVisible = !this.options.isVisible;
+                });
+        
+                this.container.onPointerEnterObservable.add(() =>{
+                    this.container.zIndex = 555; //some big value
+                });
+        
+                this.container.onPointerOutObservable.add(() =>{
+                    this.container.zIndex = 0; //back to original
+                    this.options.isVisible = false;
+                });
+        
+                // add controls
+                this.advancedTexture.addControl(this.container);
+                this.container.addControl(this.button);
+                this.container.addControl(this.options);
+        	}
+        
+            get top() {
+                return this.container.top;
+            }
+        
+            set top(value) {
+               this.container.top = value;
+            }
+        
+            get left() {
+                return this.container.left;
+            }
+        
+            set left(value) {
+               this.container.left = value;
+            }
+        
+            addOption(text, callback)
+        	{
+                var button = BABYLON.GUI.Button.CreateSimpleButton(null, text);
+                button.height = this.height;
+                button.paddingTop = "-1px";
+                button.background = this.background;
+                button.color = this.color;
+                button.alpha = 1.0;
+                button.onPointerUpObservable.add(() => {
+                    this.options.isVisible = false;            
+                });        
+                button.onPointerClickObservable.add(callback); 
+                this.options.addControl(button);
+            }
+        }
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

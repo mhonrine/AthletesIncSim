@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        const fps = 60;
+
+var createOffense = function (scene, mat) {
+    var off = [];
+    off.push(place(scene, 0, -3, mat)) // C
+    off.push(place(scene, 2.5, -3.4, mat)) // RT
+    off.push(place(scene, 1.25, -3.3, mat)) // RG
+    off.push(place(scene, -2.5, -3.4, mat)) // LT
+    off.push(place(scene, -1.25, -3.3, mat)) // LG
+    off.push(place(scene, 0, -6, mat)) // QB
+    off.push(place(scene, -1.5, -6, mat)) // RB
+    off.push(place(scene, -4.5, -4, mat)) // TE
+    off.push(place(scene, -10, -3.3, mat)) // WRX
+    off.push(place(scene, 6, -4, mat)) // WRY
+    off.push(place(scene, 10, -3.3, mat)) // WRZ
+    return off;
+}
+
+var createDefense = function (scene, mat) {
+    var def = [];
+    def.push(place(scene, 1, -1.7, mat)) // DTR
+    def.push(place(scene, -1, -1.7, mat)) // DTL
+    def.push(place(scene, 3.15, -1.7, mat)) // DER
+    def.push(place(scene, -3.15, -1.7, mat)) // DEL
+    def.push(place(scene, 0, .5, mat)) // MLB
+    def.push(place(scene, -4, .25, mat)) // OLB
+    def.push(place(scene, -10, -.5, mat)) // CBX
+    def.push(place(scene, 10, -.5, mat)) // CBY
+    def.push(place(scene, 6, 0, mat)) // CBS
+    def.push(place(scene, -3.5, 4, mat)) // FS
+    def.push(place(scene, 3.5, 4, mat)) // SS
+    return def;
+}
+
+var place = function(scene, x, y, mat) {
+    const disc = BABYLON.MeshBuilder.CreateDisc("disc", scene);
+	disc.position.x = x;
+    disc.position.y = y;
+	disc.material = mat;
+    return disc;
+}
+
+
+var slant = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    final = 18
+    if(inOut) {
+        final = 16;
+    }
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps / 2,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: 4 * fps,
+        value: x + (final * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps / 2,
+        value: y + 1.25
+    });
+
+    keyFramesY.push({
+        frame: 4 * fps,
+        value: y + 3.5
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var createScene = function () {
+    // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+
+    const frameRate = 10;
+
+    // Parameters : name, position, scene
+    const camera = new BABYLON.UniversalCamera("UniversalCamera", new BABYLON.Vector3(0, 0, -25), scene);
+
+    // Targets the camera to a particular position. In this case the scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
+
+    // Attach the camera to the canvas
+    //camera.attachControl(canvas, true);
+
+    //const xSlide = new BABYLON.Animation("xSlide", "position.x", frameRate, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    
+    //Materials
+	var red = new BABYLON.StandardMaterial("red", scene);
+	red.diffuseColor = new BABYLON.Color3(1, 0, 0);
+	red.emissiveColor = new BABYLON.Color3(1, 0, 0);
+	red.specularColor = new BABYLON.Color3(1, 0, 0);
+	
+	var blue = new BABYLON.StandardMaterial("blue", scene);
+	blue.diffuseColor = new BABYLON.Color3(0, 0, 1);
+	blue.emissiveColor = new BABYLON.Color3(0, 0, 1);
+	blue.specularColor = new BABYLON.Color3(0, 0, 1);
+	
+	// Shapes
+	
+	
+    offense = createOffense(scene, red)
+	defense = createDefense(scene, blue)
+
+    slant(scene, offense[8], 1, false)
+    slant(scene, offense[7], 1, true)
+    slant(scene, offense[9], -1, true)
+    slant(scene, offense[10], -1, false)
+
+    return scene;
+};
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

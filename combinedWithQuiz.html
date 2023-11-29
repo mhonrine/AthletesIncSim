@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        const fps = 60;
+
+var createOffense = function (scene, mat) {
+    var off = [];
+    off.push(place(scene, 0, -3, mat)) // C
+    off.push(place(scene, 2.5, -3.4, mat)) // RT
+    off.push(place(scene, 1.25, -3.3, mat)) // RG
+    off.push(place(scene, -2.5, -3.4, mat)) // LT
+    off.push(place(scene, -1.25, -3.3, mat)) // LG
+    off.push(place(scene, 0, -6, mat)) // QB
+    off.push(place(scene, -1.5, -6, mat)) // RB
+    off.push(place(scene, -4.5, -4, mat)) // TE
+    off.push(place(scene, -10, -3.3, mat)) // WRX
+    off.push(place(scene, 6, -4, mat)) // WRY
+    off.push(place(scene, 10, -3.3, mat)) // WRZ
+    return off;
+}
+
+var createDefense = function (scene, mat) {
+    var def = [];
+    def.push(place(scene, 1, -1.7, mat)) // DTR
+    def.push(place(scene, -1, -1.7, mat)) // DTL
+    def.push(place(scene, 3.15, -1.7, mat)) // DER
+    def.push(place(scene, -3.15, -1.7, mat)) // DEL
+    def.push(place(scene, 0, .5, mat)) // MLB
+    def.push(place(scene, -4, .25, mat)) // OLB
+    def.push(place(scene, -10, -.5, mat)) // CBX
+    def.push(place(scene, 10, -.5, mat)) // CBY
+    def.push(place(scene, 6, 0, mat)) // CBS
+    def.push(place(scene, -3.5, 4, mat)) // FS
+    def.push(place(scene, 3.5, 4, mat)) // SS
+    return def;
+}
+
+var place = function(scene, x, y, mat) {
+    const disc = BABYLON.MeshBuilder.CreateDisc("disc", scene);
+	disc.position.x = x;
+    disc.position.y = y;
+	disc.material = mat;
+    return disc;
+}
+
+
+var slant = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    final = 18
+    if(inOut) {
+        final = 16;
+    }
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps / 2,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: 4 * fps,
+        value: x + (final * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps / 2,
+        value: y + 1.5
+    });
+
+    keyFramesY.push({
+        frame: 4 * fps,
+        value: y + 6
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var go = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    final = 18
+    if(inOut) {
+        final = 16;
+    }
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+
+    keyFramesX.push({
+        frame: 4 * fps,
+        value: x
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: 4 * fps,
+        value: y + 12
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var quickOut = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    mult = mult * -1;
+
+    final = 4;
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps / 2,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.25,
+        value: x + (final * mult)
+    });
+
+    if(inOut) {
+        keyFramesX.push({
+        frame: fps * 2,
+        value: x + ((final + 3) * mult)
+        });
+    }
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps / 2,
+        value: y + 2
+    });
+
+    keyFramesY.push({
+        frame: fps * 2,
+        value: y + 2
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var comeback = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    mult = mult * -1
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: 2 * fps,
+        value: x + (1 * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 7
+    });
+
+    keyFramesY.push({
+        frame: 2 * fps,
+        value: y + 6
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var curl = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: 2 * fps,
+        value: x + (1 * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 7
+    });
+
+    keyFramesY.push({
+        frame: 2 * fps,
+        value: y + 6
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var squareOut = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    mult = mult * -1;
+
+    final = 3;
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 2.5,
+        value: x + (final * mult)
+    });
+
+    if(inOut) {
+        keyFramesX.push({
+        frame: fps * 3,
+        value: x + ((final + 2) * mult)
+        });
+    }
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 6
+    });
+
+    keyFramesY.push({
+        frame: fps * 3,
+        value: y + 6
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var squareIn = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    final = 7;
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 4,
+        value: x + (final * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 6
+    });
+
+    keyFramesY.push({
+        frame: fps * 4,
+        value: y + 6
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var post = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    final = 15
+    if(inOut) {
+        final = 12;
+    }
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: 5 * fps,
+        value: x + (final * mult)
+    });
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 6
+    });
+
+    keyFramesY.push({
+        frame: 5 * fps,
+        value: y + 15
+    });
+
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var corner = function(scene, disc, mult, inOut) {
+    x = disc.position.x
+    y = disc.position.y
+    var xSlide = new BABYLON.Animation("xSlide", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesX = []; 
+
+    mult = mult * -1
+
+    final = 3.8
+
+    if(inOut) {
+        final = 7
+    }
+
+    keyFramesX.push({
+        frame: 0,
+        value: x
+    });
+
+    keyFramesX.push({
+        frame: fps * 1.75,
+        value: x
+    });
+
+
+    if(inOut) {
+        keyFramesX.push({
+        frame: 4 * fps,
+        value: x + (final * mult)
+        });
+    }
+    else {
+        keyFramesX.push({
+        frame: 3 * fps,
+        value: x + (final * mult)
+        });
+    }
+
+    xSlide.setKeys(keyFramesX);
+
+    var ySlide = new BABYLON.Animation("ySlide", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    var keyFramesY = []; 
+
+    keyFramesY.push({
+        frame: 0,
+        value: y
+    });
+
+    keyFramesY.push({
+        frame: fps * 1.75,
+        value: y + 6
+    });
+
+    if(inOut) {
+        keyFramesY.push({
+        frame: 4 * fps,
+        value: y + 13
+        });
+    }
+    else {
+        keyFramesY.push({
+        frame: 3 * fps,
+        value: y + 10
+        });
+    }
+    ySlide.setKeys(keyFramesY)
+
+    scene.beginDirectAnimation(disc, [xSlide, ySlide], 0, 4 * fps)
+}
+
+var createScene = function () {
+
+    var routes = [1, 1, 1, 1];
+
+    // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+
+    scene.autoClear = false;
+
+    // This creates and positions a free camera (non-mesh)
+    var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
+
+    // This attaches the camera to the canvas
+    camera.attachControl(canvas, true);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light.intensity = 0.7;
+
+    var setXRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[0] = 1;
+            break
+            case 1: 
+                routes[0] = 2;
+            break
+            case 2: 
+                routes[0] = 3;
+            break
+            case 3: 
+                routes[0] = 4;
+            break
+            case 4: 
+                routes[0] = 5;
+            break
+            case 5: 
+                routes[0] = 6;
+            break
+            case 6: 
+                routes[0] = 7;
+            break
+            case 7: 
+                routes[0] = 8;
+            break
+            case 8: 
+                routes[0] = 9;
+            break
+        }
+	}
+
+    var setYRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[1] = 1;
+            break
+            case 1: 
+                routes[1] = 2;
+            break
+            case 2: 
+                routes[1] = 3;
+            break
+            case 3: 
+                routes[1] = 4;
+            break
+            case 4: 
+                routes[1] = 5;
+            break
+            case 5: 
+                routes[1] = 6;
+            break
+            case 6: 
+                routes[1] = 7;
+            break
+            case 7: 
+                routes[1] = 8;
+            break
+            case 8: 
+                routes[1] = 9;
+            break
+        }
+	}
+
+    var setZRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[2] = 1;
+            break
+            case 1: 
+                routes[2] = 2;
+            break
+            case 2: 
+                routes[2] = 3;
+            break
+            case 3: 
+                routes[2] = 4;
+            break
+            case 4: 
+                routes[2] = 5;
+            break
+            case 5: 
+                routes[2] = 6;
+            break
+            case 6: 
+                routes[2] = 7;
+            break
+            case 7: 
+                routes[2] = 8;
+            break
+            case 8: 
+                routes[2] = 9;
+            break
+        }
+	}
+
+    var setTERoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[3] = 1;
+            break
+            case 1: 
+                routes[3] = 2;
+            break
+            case 2: 
+                routes[3] = 3;
+            break
+            case 3: 
+                routes[3] = 4;
+            break
+            case 4: 
+                routes[3] = 5;
+            break
+            case 5: 
+                routes[3] = 6;
+            break
+            case 6: 
+                routes[3] = 7;
+            break
+            case 7: 
+                routes[3] = 8;
+            break
+            case 8: 
+                routes[3] = 9;
+            break
+        }
+	}
+
+    var width = screen.width;
+    var height = screen.height;
+    height /= 7;
+    var label = height - 50;
+
+    var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var selectBox = new BABYLON.GUI.SelectionPanel();
+    selectBox.width = "150px";
+    selectBox.height = "325px";
+    selectBox.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    selectBox.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var xWidth = width / 12;
+    selectBox.left = `${xWidth}px`;
+    selectBox.top = `${height}px`;
+
+    selectBox.thickness = 0;
+    selectBox.headerColor = "white";
+    selectBox.color = "white";
+     
+    advancedTexture.addControl(selectBox);
+
+    var xRoutes = new BABYLON.GUI.RadioGroup("Route");
+	xRoutes.addRadio("Slant", setXRoute, true);
+    xRoutes.addRadio("Curl", setXRoute);
+    xRoutes.addRadio("Corner", setXRoute);
+    xRoutes.addRadio("Go", setXRoute);
+    xRoutes.addRadio("In", setXRoute);
+    xRoutes.addRadio("Out", setXRoute);
+    xRoutes.addRadio("Post", setXRoute);
+    xRoutes.addRadio("Comeback", setXRoute);
+    xRoutes.addRadio("Quick Out", setXRoute);
+
+    selectBox.addGroup(xRoutes);
+
+    var text1 = new BABYLON.GUI.TextBlock();
+    text1.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text1.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text1.width = "125px";
+    text1.height = "50px";
+    text1.left = `${xWidth}px`;
+    text1.top = `${label}px`;
+    text1.fontSize = 24;
+    text1.text = "X Receiver";
+    text1.color = "white";
+    advancedTexture.addControl(text1);
+
+    var advancedTexture2 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var yReceiver = new BABYLON.GUI.SelectionPanel();
+    yReceiver.width = "150px";
+    yReceiver.height = "325px";
+    yReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    yReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var yWidth = width / 3;
+    yReceiver.left = `${yWidth}px`;
+    yReceiver.top = `${height}px`;
+
+    yReceiver.thickness = 0;
+    yReceiver.headerColor = "white";
+    yReceiver.color = "white";
+     
+    advancedTexture2.addControl(yReceiver);
+
+    var yRoutes = new BABYLON.GUI.RadioGroup("Route");
+	yRoutes.addRadio("Slant", setYRoute, true);
+    yRoutes.addRadio("Curl", setYRoute);
+    yRoutes.addRadio("Corner", setYRoute);
+    yRoutes.addRadio("Go", setYRoute);
+    yRoutes.addRadio("In", setYRoute);
+    yRoutes.addRadio("Out", setYRoute);
+    yRoutes.addRadio("Post", setYRoute);
+    yRoutes.addRadio("Comeback", setYRoute);
+    yRoutes.addRadio("Quick Out", setYRoute);
+
+    yReceiver.addGroup(yRoutes);
+
+    var text2 = new BABYLON.GUI.TextBlock();
+    text2.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text2.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text2.width = "125px";
+    text2.height = "50px";
+    text2.left = `${yWidth}px`;
+    text2.top = `${label}px`;
+    text2.fontSize = 24;
+    text2.text = "Y Receiver";
+    text2.color = "white";
+    advancedTexture2.addControl(text2);
+
+    var advancedTexture3 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var zReceiver = new BABYLON.GUI.SelectionPanel();
+    zReceiver.width = "150px";
+    zReceiver.height = "325px";
+    zReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    zReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var zWidth = width / 1.75;
+    zReceiver.left = `${zWidth}px`;
+    zReceiver.top = `${height}px`;
+
+    zReceiver.thickness = 0;
+    zReceiver.headerColor = "white";
+    zReceiver.color = "white";
+     
+    advancedTexture3.addControl(zReceiver);
+
+    var zRoutes = new BABYLON.GUI.RadioGroup("Route");
+	zRoutes.addRadio("Slant", setZRoute, true);
+    zRoutes.addRadio("Curl", setZRoute);
+    zRoutes.addRadio("Corner", setZRoute);
+    zRoutes.addRadio("Go", setZRoute);
+    zRoutes.addRadio("In", setZRoute);
+    zRoutes.addRadio("Out", setZRoute);
+    zRoutes.addRadio("Post", setZRoute);
+    zRoutes.addRadio("Comeback", setZRoute);
+    zRoutes.addRadio("Quick Out", setZRoute);
+
+    zReceiver.addGroup(zRoutes);
+
+    var text3 = new BABYLON.GUI.TextBlock();
+    text3.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text3.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text3.width = "125px";
+    text3.height = "50px";
+    text3.left = `${zWidth}px`;
+    text3.top = `${label}px`;
+    text3.fontSize = 24;
+    text3.text = "Z Receiver";
+    text3.color = "white";
+    advancedTexture3.addControl(text3);
+
+    var advancedTexture4 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var teReceiver = new BABYLON.GUI.SelectionPanel();
+    teReceiver.width = "150px";
+    teReceiver.height = "325px";
+    teReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    teReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var teWidth = width / 1.25;
+    teReceiver.left = `${teWidth}px`;
+    teReceiver.top = `${height}px`;
+
+    teReceiver.thickness = 0;
+    teReceiver.headerColor = "white";
+    teReceiver.color = "white";
+     
+    advancedTexture4.addControl(teReceiver);
+
+    var teRoutes = new BABYLON.GUI.RadioGroup("Route");
+	teRoutes.addRadio("Slant", setTERoute, true);
+    teRoutes.addRadio("Curl", setTERoute);
+    teRoutes.addRadio("Corner", setTERoute);
+    teRoutes.addRadio("Go", setTERoute);
+    teRoutes.addRadio("In", setTERoute);
+    teRoutes.addRadio("Out", setTERoute);
+    teRoutes.addRadio("Post", setTERoute);
+    teRoutes.addRadio("Comeback", setTERoute);
+    teRoutes.addRadio("Quick Out", setTERoute);
+
+    teReceiver.addGroup(teRoutes);
+
+    var text4 = new BABYLON.GUI.TextBlock();
+    text4.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text4.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text4.width = "125px";
+    text4.height = "50px";
+    text4.left = `${teWidth}px`;
+    text4.top = `${label}px`;
+    text4.fontSize = 24;
+    text4.text = "TE";
+    text4.color = "white";
+    advancedTexture4.addControl(text4);
+
+    var advancedTexture5 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var button2D = BABYLON.GUI.Button.CreateSimpleButton("but1", "2D Model");
+
+    button2D.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    button2D.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    button2D.paddingTop = "10px";
+    button2D.width = "100px";
+    button2D.height = "50px";
+    button2D.color = "white";
+    button2D.thickness = 0;
+    button2D.background = "red";
+    button2D.left = `${yWidth}px`;
+    button2D.top = "600px";
+
+    var button3D = BABYLON.GUI.Button.CreateSimpleButton("but1", "3D Model");
+
+    button3D.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    button3D.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    button3D.paddingTop = "10px";
+    button3D.width = "100px";
+    button3D.height = "50px";
+    button3D.color = "white";
+    button3D.thickness = 0;
+    button3D.background = "red";
+    button3D.left = `${zWidth}px`;
+    button3D.top = "600px";
+
+    advancedTexture4.addControl(button2D);
+    advancedTexture4.addControl(button3D);
+
+    var currentActiveScene = scene;
+    button2D.onPointerUpObservable.add(function () {
+        if (currentActiveScene === scene) {
+            currentActiveScene = modelScene;
+        } else {
+            currentActiveScene = scene;
+        }
+    });
+
+    // This creates a basic Babylon Scene object (non-mesh)
+    var modelScene = new BABYLON.Scene(engine);
+
+    const frameRate = 10;
+
+    // Parameters : name, position, scene
+    const camera1 = new BABYLON.UniversalCamera("UniversalCamera", new BABYLON.Vector3(0, 0, -30), modelScene);
+
+    // Targets the camera to a particular position. In this case the scene origin
+    camera1.setTarget(BABYLON.Vector3.Zero());
+
+    // Attach the camera to the canvas
+    //camera.attachControl(canvas, true);
+
+    //const xSlide = new BABYLON.Animation("xSlide", "position.x", frameRate, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    
+    //Materials
+	var red = new BABYLON.StandardMaterial("red", modelScene);
+	red.diffuseColor = new BABYLON.Color3(1, 0, 0);
+	red.emissiveColor = new BABYLON.Color3(1, 0, 0);
+	red.specularColor = new BABYLON.Color3(1, 0, 0);
+	
+	var blue = new BABYLON.StandardMaterial("blue", modelScene);
+	blue.diffuseColor = new BABYLON.Color3(0, 0, 1);
+	blue.emissiveColor = new BABYLON.Color3(0, 0, 1);
+	blue.specularColor = new BABYLON.Color3(0, 0, 1);
+	
+	// Shapes
+	
+	
+    offense = createOffense(modelScene, red)
+	defense = createDefense(modelScene, blue)
+
+    corner(modelScene, offense[8], 1, false)
+    corner(modelScene, offense[7], 1, true)
+    corner(modelScene, offense[9], -1, true)
+    corner(modelScene, offense[10], -1, false)
+
+    var advancedTextureModel = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var quizButton = BABYLON.GUI.Button.CreateSimpleButton("but1", "Quiz Button");
+
+    quizButton.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_BOTTOM;
+    quizButton.paddingTop = "10px";
+    quizButton.width = "100px";
+    quizButton.height = "50px";
+    quizButton.color = "white";
+    quizButton.thickness = 0;
+    quizButton.background = "red";
+
+    advancedTextureModel.addControl(quizButton);
+
+    quizButton.onPointerUpObservable.add(function () {
+        if (currentActiveScene === modelScene) {
+            currentActiveScene = quizScene;
+        } else {
+            currentActiveScene = modelScene;
+        }
+    });
+
+    var quizScene = new BABYLON.Scene(engine);
+
+    // This creates and positions a free camera (non-mesh)
+    var camera2 = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, 0), quizScene);
+
+    // This targets the camera to scene origin
+    camera2.setTarget(BABYLON.Vector3.Zero());
+
+    // This attaches the camera to the canvas
+    camera2.attachControl(canvas, true);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light1 = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 5, 0), quizScene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light1.intensity = 0.4;
+
+    // Our built-in 'ground' shape.
+    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 6, height: 6}, quizScene);
+    const groundMaterial = new BABYLON.StandardMaterial("Ground Material", quizScene);
+    groundMaterial.diffuseColor = BABYLON.Color3.Red();
+    ground.material = groundMaterial;
+
+    //2d Game
+
+    //3d Game
+
+    //Quiz GUI
+    const advancedTextureQuiz = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("quizUI");
+    
+    let buttonPressed = new Promise(function(resolve) { 
+    let theButton = document. getElementById("button.text");
+    theButton.addEventListener("click", resolve);
+    });
+
+    playArray = ["Slant", "Go", "Quickout", "Comeback", "Curl", 
+                "Square Out", "Square In", "Post", "Corner"];
+    
+    coverArray = ["Defense 1", "Defense 2", "Defense 3", "Defense 4"];
+
+    var removeCorrectAnswer = function(array, correct) {
+        const index = array.indexOf(correct);
+        if (index > -1) { 
+            array.splice(index, 1);
+        }
+    }
+
+    var shuffle = function(array) {
+        let currentIndex = array.length,  randomIndex;
+
+        while (currentIndex > 0) {
+
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+        }
+
+    return array;
+    }
+    shuffle(playArray);
+    shuffle(coverArray);
+
+    correctOffense = playArray.pop();
+    correctDefense = coverArray.pop();
+
+    var createQuestion  = function(name, text) {
+        var question = BABYLON.GUI.Button.CreateSimpleButton(name, text);
+        
+        question.width = "600px";
+        question.height = "230px";
+        question.top = "-50px";
+        question.cornerRadius = 20;
+        question.color = "Black";
+        question.thickness = 5;
+        question.background = "white";
+        question.fontSize = 30;
+        advancedTextureQuiz.addControl(question);
+        return question;
+    }
+    let q_ctr = 0;
+    var createAnswers = function(passedArray, correct) {
+        
+        //arr1 = ["False", "False", "False", "True"];
+        
+        arr1 = passedArray.slice(0, 3);
+        arr1.push(correct)
+        shuffle(arr1);
+
+
+        var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", arr1[0]);
+        button1.width = "200px"
+        button1.height = "90px";
+        button1.text = arr1[0];
+        //button1.horizontalAlignment = screenLeft;
+        //button1.verticalAlignment = screenTop;
+        button1.top = "175px";
+        button1.left = "-125px";
+        button1.color = "white";
+        button1.cornerRadius = 20;
+        button1.background = "black";
+        button1.onPointerUpObservable.add(function() {
+            if(button1.text == correct) {
+                button1.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button1.color = "red";
+                button1.text = "Incorrect";
+            }
+        });
+        advancedTextureQuiz.addControl(button1);
+
+        var button2 = BABYLON.GUI.Button.CreateSimpleButton("but2", arr1[1]);
+        button2.width = "200px"
+        button2.height = "90px";
+        button2.text = arr1[1];
+        //button2.horizontalAlignment = screenLeft;
+        button2.top = "275px";
+        button2.left = "-125px";
+        
+        button2.color = "white";
+        button2.cornerRadius = 20;
+        button2.background = "black";
+        button2.onPointerUpObservable.add(function() {
+            if(button2.text == correct) {
+                button2.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button2.color = "red";
+                button2.text = "Incorrect";
+            }
+        });
+        advancedTextureQuiz.addControl(button2);
+
+        var button3 = BABYLON.GUI.Button.CreateSimpleButton("but3", arr1[2]);
+        button3.width = "200px"
+        button3.height = "90px";
+        button3.text = arr1[2];
+        //button3.horizontalAlignment
+        //button3.verticalAlignment = screenTop
+        button3.top = "175px";
+        button3.left = "125px";
+        button3.color = "white";
+        button3.cornerRadius = 20;
+        button3.background = "black";
+        button3.onPointerUpObservable.add(function() {
+            if(button3.text == correct) {
+                button3.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button3.color = "red";
+                button3.text = "Incorrect";
+            }
+        });
+        advancedTextureQuiz.addControl(button3);
+
+        var button4 = BABYLON.GUI.Button.CreateSimpleButton("but4", arr1[3]);
+        button4.width = "200px"
+        button4.height = "90px";
+        button4.text = arr1[3];
+        //button4.horizontalAlignment = ;
+        button4.top = "275px";
+        button4.left = "125px";
+        
+        button4.color = "white";
+        button4.cornerRadius = 20;
+        button4.background = "black";
+        button4.onPointerUpObservable.add(function() {
+            if(button4.text == correct) {
+                button4.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button4.color = "red";
+                button4.text = "Incorrect";
+            }
+        });
+        advancedTextureQuiz.addControl(button4);
+        alert(correct);
+    }
+    var createNext_Exit = function(choice){
+        if (choice == 1){
+            var nextButton = BABYLON.GUI.Button.CreateSimpleButton("next", "Next");
+            nextButton.width = "100px";
+            nextButton.height = "70px";
+            nextButton.background = "green";
+            nextButton.color = "white";
+            nextButton.top = "-255px";
+            nextButton.fontSize = 20;
+            nextButton.onPointerClickObservable.add(function(){
+                nextButton.dispose();
+                createQuestion("q2", "What defensive coverage was shown?");
+                createAnswers(coverArray, correctDefense);
+                
+            });
+            advancedTextureQuiz.addControl(nextButton);
+        }
+        if (choice == 2) {
+            var exitButton = BABYLON.GUI.Button.CreateSimpleButton("exit", "Exit");
+            exitButton.width = "100px";
+            exitButton.height = "70px";
+            exitButton.background = "green";
+            exitButton.color = "white";
+            exitButton.top = "-255px";
+            exitButton.fontSize = 20;
+            exitButton.onPointerClickObservable.add(function(){
+                if (currentActiveScene === quizScene) {
+                    currentActiveScene = scene;
+                } else {
+                    currentActiveScene = quizScene;
+                }
+            });
+            advancedTextureQuiz.addControl(exitButton);
+        }
+    }
+
+    createQuestion("q1", "What offensive play was shown?");
+     
+    createAnswers(playArray,correctOffense);
+
+    setTimeout(function () {
+        engine.stopRenderLoop();
+
+        engine.runRenderLoop(function () {
+            currentActiveScene.render();
+        });
+    }, 500);
+
+    return scene;
+}
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

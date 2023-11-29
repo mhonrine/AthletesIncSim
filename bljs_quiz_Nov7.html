@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        var createSceneQuiz = function () {
+            // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+
+    // This creates and positions a free camera (non-mesh)
+    var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, 0), scene);
+
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
+
+    // This attaches the camera to the canvas
+    camera.attachControl(canvas, true);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 5, 0), scene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light.intensity = 0.4;
+
+    // Our built-in 'ground' shape.
+    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 6, height: 6}, scene);
+    const groundMaterial = new BABYLON.StandardMaterial("Ground Material", scene);
+    groundMaterial.diffuseColor = BABYLON.Color3.Red();
+    ground.material = groundMaterial;
+
+    //2d Game
+
+    //3d Game
+
+    //Quiz GUI
+    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("quizUI");
+    
+    let buttonPressed = new Promise(function(resolve) { 
+    let theButton = document. getElementById("button.text");
+    theButton.addEventListener("click", resolve);
+    });
+
+    playArray = ["Slant", "Go", "Quickout", "Comeback", "Curl", 
+                "Square Out", "Square In", "Post", "Corner"];
+    
+    coverArray = ["Defense 1", "Defense 2", "Defense 3", "Defense 4"];
+
+    var removeCorrectAnswer = function(array, correct) {
+        const index = array.indexOf(correct);
+        if (index > -1) { 
+            array.splice(index, 1);
+        }
+    }
+
+    var shuffle = function(array) {
+        let currentIndex = array.length,  randomIndex;
+
+        while (currentIndex > 0) {
+
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+        }
+
+    return array;
+    }
+    shuffle(playArray);
+    shuffle(coverArray);
+
+    correctOffense = playArray.pop();
+    correctDefense = coverArray.pop();
+
+    var createQuestion  = function(name, text) {
+        var question = BABYLON.GUI.Button.CreateSimpleButton(name, text);
+        
+        question.width = "600px";
+        question.height = "230px";
+        question.top = "-50px";
+        question.cornerRadius = 20;
+        question.color = "Black";
+        question.thickness = 5;
+        question.background = "white";
+        question.fontSize = 30;
+        advancedTexture.addControl(question);
+        return question;
+    }
+    let q_ctr = 0;
+    var createAnswers = function(passedArray, correct) {
+        
+        //arr1 = ["False", "False", "False", "True"];
+        
+        arr1 = passedArray.slice(0, 3);
+        arr1.push(correct)
+        shuffle(arr1);
+
+
+        var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", arr1[0]);
+        button1.width = "200px"
+        button1.height = "90px";
+        button1.text = arr1[0];
+        //button1.horizontalAlignment = screenLeft;
+        //button1.verticalAlignment = screenTop;
+        button1.top = "175px";
+        button1.left = "-125px";
+        button1.color = "white";
+        button1.cornerRadius = 20;
+        button1.background = "black";
+        button1.onPointerUpObservable.add(function() {
+            if(button1.text == correct) {
+                button1.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button1.color = "red";
+                button1.text = "Incorrect";
+            }
+        });
+        advancedTexture.addControl(button1);
+
+        var button2 = BABYLON.GUI.Button.CreateSimpleButton("but2", arr1[1]);
+        button2.width = "200px"
+        button2.height = "90px";
+        button2.text = arr1[1];
+        //button2.horizontalAlignment = screenLeft;
+        button2.top = "275px";
+        button2.left = "-125px";
+        
+        button2.color = "white";
+        button2.cornerRadius = 20;
+        button2.background = "black";
+        button2.onPointerUpObservable.add(function() {
+            if(button2.text == correct) {
+                button2.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button2.color = "red";
+                button2.text = "Incorrect";
+            }
+        });
+        advancedTexture.addControl(button2);
+
+        var button3 = BABYLON.GUI.Button.CreateSimpleButton("but3", arr1[2]);
+        button3.width = "200px"
+        button3.height = "90px";
+        button3.text = arr1[2];
+        //button3.horizontalAlignment
+        //button3.verticalAlignment = screenTop
+        button3.top = "175px";
+        button3.left = "125px";
+        button3.color = "white";
+        button3.cornerRadius = 20;
+        button3.background = "black";
+        button3.onPointerUpObservable.add(function() {
+            if(button3.text == correct) {
+                button3.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button3.color = "red";
+                button3.text = "Incorrect";
+            }
+        });
+        advancedTexture.addControl(button3);
+
+        var button4 = BABYLON.GUI.Button.CreateSimpleButton("but4", arr1[3]);
+        button4.width = "200px"
+        button4.height = "90px";
+        button4.text = arr1[3];
+        //button4.horizontalAlignment = ;
+        button4.top = "275px";
+        button4.left = "125px";
+        
+        button4.color = "white";
+        button4.cornerRadius = 20;
+        button4.background = "black";
+        button4.onPointerUpObservable.add(function() {
+            if(button4.text == correct) {
+                button4.color = "green";
+                alert("Correct!");
+                q_ctr++;
+                createNext_Exit(q_ctr);
+            } else {
+                //alert("Incorrect");
+                button4.color = "red";
+                button4.text = "Incorrect";
+            }
+        });
+        advancedTexture.addControl(button4);
+        alert(correct);
+    }
+    var createNext_Exit = function(choice){
+        if (choice == 1){
+            var nextButton = BABYLON.GUI.Button.CreateSimpleButton("next", "Next");
+            nextButton.width = "100px";
+            nextButton.height = "70px";
+            nextButton.background = "green";
+            nextButton.color = "white";
+            nextButton.top = "-255px";
+            nextButton.fontSize = 20;
+            nextButton.onPointerClickObservable.add(function(){
+                nextButton.dispose();
+                createQuestion("q2", "What defensive coverage was shown?");
+                createAnswers(coverArray, correctDefense);
+                
+            });
+            advancedTexture.addControl(nextButton);
+        }
+        if (choice == 2) {
+            var exitButton = BABYLON.GUI.Button.CreateSimpleButton("exit", "Exit");
+            exitButton.width = "100px";
+            exitButton.height = "70px";
+            exitButton.background = "green";
+            exitButton.color = "white";
+            exitButton.top = "-255px";
+            exitButton.fontSize = 20;
+            exitButton.onPointerClickObservable.add(function(){
+                exitButton.dispose();
+                scene.dispose(); 
+            });
+            advancedTexture.addControl(exitButton);
+        }
+    }
+
+    createQuestion("q1", "What offensive play was shown?");
+     
+    createAnswers(playArray,correctOffense);
+
+    return scene;
+        };
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createSceneQuiz();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        var createScene = function () {
+
+    var routes = [1, 1, 1, 1];
+
+    // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+
+    // This creates and positions a free camera (non-mesh)
+    var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
+
+    // This attaches the camera to the canvas
+    camera.attachControl(canvas, true);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light.intensity = 0.7;
+
+    var setXRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[0] = 1;
+            break
+            case 1: 
+                routes[0] = 2;
+            break
+            case 2: 
+                routes[0] = 3;
+            break
+            case 3: 
+                routes[0] = 4;
+            break
+            case 4: 
+                routes[0] = 5;
+            break
+            case 5: 
+                routes[0] = 6;
+            break
+            case 6: 
+                routes[0] = 7;
+            break
+            case 7: 
+                routes[0] = 8;
+            break
+            case 8: 
+                routes[0] = 9;
+            break
+        }
+	}
+
+    var setYRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[1] = 1;
+            break
+            case 1: 
+                routes[1] = 2;
+            break
+            case 2: 
+                routes[1] = 3;
+            break
+            case 3: 
+                routes[1] = 4;
+            break
+            case 4: 
+                routes[1] = 5;
+            break
+            case 5: 
+                routes[1] = 6;
+            break
+            case 6: 
+                routes[1] = 7;
+            break
+            case 7: 
+                routes[1] = 8;
+            break
+            case 8: 
+                routes[1] = 9;
+            break
+        }
+	}
+
+    var setZRoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[2] = 1;
+            break
+            case 1: 
+                routes[2] = 2;
+            break
+            case 2: 
+                routes[2] = 3;
+            break
+            case 3: 
+                routes[2] = 4;
+            break
+            case 4: 
+                routes[2] = 5;
+            break
+            case 5: 
+                routes[2] = 6;
+            break
+            case 6: 
+                routes[2] = 7;
+            break
+            case 7: 
+                routes[2] = 8;
+            break
+            case 8: 
+                routes[2] = 9;
+            break
+        }
+	}
+
+    var setTERoute = function(but) {   
+		switch(but) {
+            case 0: 
+                routes[3] = 1;
+            break
+            case 1: 
+                routes[3] = 2;
+            break
+            case 2: 
+                routes[3] = 3;
+            break
+            case 3: 
+                routes[3] = 4;
+            break
+            case 4: 
+                routes[3] = 5;
+            break
+            case 5: 
+                routes[3] = 6;
+            break
+            case 6: 
+                routes[3] = 7;
+            break
+            case 7: 
+                routes[3] = 8;
+            break
+            case 8: 
+                routes[3] = 9;
+            break
+        }
+	}
+
+    var width = screen.width;
+    var height = screen.height;
+    height /= 7;
+    var label = height - 50;
+
+    var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var selectBox = new BABYLON.GUI.SelectionPanel();
+    selectBox.width = "150px";
+    selectBox.height = "325px";
+    selectBox.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    selectBox.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var xWidth = width / 12;
+    selectBox.left = `${xWidth}px`;
+    selectBox.top = `${height}px`;
+
+    selectBox.thickness = 0;
+    selectBox.headerColor = "white";
+    selectBox.color = "white";
+     
+    advancedTexture.addControl(selectBox);
+
+    var xRoutes = new BABYLON.GUI.RadioGroup("Route");
+	xRoutes.addRadio("Slant", setXRoute, true);
+    xRoutes.addRadio("Curl", setXRoute);
+    xRoutes.addRadio("Corner", setXRoute);
+    xRoutes.addRadio("Go", setXRoute);
+    xRoutes.addRadio("In", setXRoute);
+    xRoutes.addRadio("Out", setXRoute);
+    xRoutes.addRadio("Post", setXRoute);
+    xRoutes.addRadio("Comeback", setXRoute);
+    xRoutes.addRadio("Quick Out", setXRoute);
+
+    selectBox.addGroup(xRoutes);
+
+    var text1 = new BABYLON.GUI.TextBlock();
+    text1.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text1.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text1.width = "125px";
+    text1.height = "50px";
+    text1.left = `${xWidth}px`;
+    text1.top = `${label}px`;
+    text1.fontSize = 24;
+    text1.text = "X Receiver";
+    text1.color = "white";
+    advancedTexture.addControl(text1);
+
+    var advancedTexture2 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var yReceiver = new BABYLON.GUI.SelectionPanel();
+    yReceiver.width = "150px";
+    yReceiver.height = "325px";
+    yReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    yReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var yWidth = width / 3;
+    yReceiver.left = `${yWidth}px`;
+    yReceiver.top = `${height}px`;
+
+    yReceiver.thickness = 0;
+    yReceiver.headerColor = "white";
+    yReceiver.color = "white";
+     
+    advancedTexture2.addControl(yReceiver);
+
+    var yRoutes = new BABYLON.GUI.RadioGroup("Route");
+	yRoutes.addRadio("Slant", setYRoute, true);
+    yRoutes.addRadio("Curl", setYRoute);
+    yRoutes.addRadio("Corner", setYRoute);
+    yRoutes.addRadio("Go", setYRoute);
+    yRoutes.addRadio("In", setYRoute);
+    yRoutes.addRadio("Out", setYRoute);
+    yRoutes.addRadio("Post", setYRoute);
+    yRoutes.addRadio("Comeback", setYRoute);
+    yRoutes.addRadio("Quick Out", setYRoute);
+
+    yReceiver.addGroup(yRoutes);
+
+    var text2 = new BABYLON.GUI.TextBlock();
+    text2.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text2.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text2.width = "125px";
+    text2.height = "50px";
+    text2.left = `${yWidth}px`;
+    text2.top = `${label}px`;
+    text2.fontSize = 24;
+    text2.text = "Y Receiver";
+    text2.color = "white";
+    advancedTexture2.addControl(text2);
+
+    var advancedTexture3 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var zReceiver = new BABYLON.GUI.SelectionPanel();
+    zReceiver.width = "150px";
+    zReceiver.height = "325px";
+    zReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    zReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var zWidth = width / 1.75;
+    zReceiver.left = `${zWidth}px`;
+    zReceiver.top = `${height}px`;
+
+    zReceiver.thickness = 0;
+    zReceiver.headerColor = "white";
+    zReceiver.color = "white";
+     
+    advancedTexture3.addControl(zReceiver);
+
+    var zRoutes = new BABYLON.GUI.RadioGroup("Route");
+	zRoutes.addRadio("Slant", setZRoute, true);
+    zRoutes.addRadio("Curl", setZRoute);
+    zRoutes.addRadio("Corner", setZRoute);
+    zRoutes.addRadio("Go", setZRoute);
+    zRoutes.addRadio("In", setZRoute);
+    zRoutes.addRadio("Out", setZRoute);
+    zRoutes.addRadio("Post", setZRoute);
+    zRoutes.addRadio("Comeback", setZRoute);
+    zRoutes.addRadio("Quick Out", setZRoute);
+
+    zReceiver.addGroup(zRoutes);
+
+    var text3 = new BABYLON.GUI.TextBlock();
+    text3.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text3.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text3.width = "125px";
+    text3.height = "50px";
+    text3.left = `${zWidth}px`;
+    text3.top = `${label}px`;
+    text3.fontSize = 24;
+    text3.text = "Z Receiver";
+    text3.color = "white";
+    advancedTexture3.addControl(text3);
+
+    var advancedTexture4 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var teReceiver = new BABYLON.GUI.SelectionPanel();
+    teReceiver.width = "150px";
+    teReceiver.height = "325px";
+    teReceiver.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    teReceiver.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    var teWidth = width / 1.25;
+    teReceiver.left = `${teWidth}px`;
+    teReceiver.top = `${height}px`;
+
+    teReceiver.thickness = 0;
+    teReceiver.headerColor = "white";
+    teReceiver.color = "white";
+     
+    advancedTexture4.addControl(teReceiver);
+
+    var teRoutes = new BABYLON.GUI.RadioGroup("Route");
+	teRoutes.addRadio("Slant", setTERoute, true);
+    teRoutes.addRadio("Curl", setTERoute);
+    teRoutes.addRadio("Corner", setTERoute);
+    teRoutes.addRadio("Go", setTERoute);
+    teRoutes.addRadio("In", setTERoute);
+    teRoutes.addRadio("Out", setTERoute);
+    teRoutes.addRadio("Post", setTERoute);
+    teRoutes.addRadio("Comeback", setTERoute);
+    teRoutes.addRadio("Quick Out", setTERoute);
+
+    teReceiver.addGroup(teRoutes);
+
+    var text4 = new BABYLON.GUI.TextBlock();
+    text4.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    text4.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    text4.width = "125px";
+    text4.height = "50px";
+    text4.left = `${teWidth}px`;
+    text4.top = `${label}px`;
+    text4.fontSize = 24;
+    text4.text = "TE";
+    text4.color = "white";
+    advancedTexture4.addControl(text4);
+
+    var advancedTexture5 = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var button2D = BABYLON.GUI.Button.CreateSimpleButton("but1", "2D Model");
+
+    button2D.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    button2D.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    button2D.paddingTop = "10px";
+    button2D.width = "100px";
+    button2D.height = "50px";
+    button2D.color = "white";
+    button2D.thickness = 0;
+    button2D.background = "red";
+    button2D.left = `${yWidth}px`;
+    button2D.top = "600px";
+
+    var button3D = BABYLON.GUI.Button.CreateSimpleButton("but1", "3D Model");
+
+    button3D.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    button3D.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    button3D.paddingTop = "10px";
+    button3D.width = "100px";
+    button3D.height = "50px";
+    button3D.color = "white";
+    button3D.thickness = 0;
+    button3D.background = "red";
+    button3D.left = `${zWidth}px`;
+    button3D.top = "600px";
+
+    advancedTexture4.addControl(button2D);
+    advancedTexture4.addControl(button3D);
+
+    return scene;
+};
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://cdn.babylonjs.com/recast.js"></script>
+        <script src="https://cdn.babylonjs.com/ammo.js"></script>
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+        <script src="https://cdn.babylonjs.com/cannon.js"></script>
+        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            
+            #canvasZone {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        /*
+    TODO:
+    - Explore Viewports and MultiViews for the camera
+    - Add button to bottom of screen to select camera
+    - Start button ? --> would change the animation start time
+    - Actively selected player-cam should highlight green on top flat side
+*/
+
+
+var initAnimations = function (players){
+    for (player in players){
+        player.animations = [];
+    }
+};
+
+var prevHighlightedPlayer = "None";
+var highlightedPlayer;
+
+// Sets the highlighted player (name)
+function setHighlightedPlayerName(player){
+    prevHighlightedPlayer = highlightedPlayer;
+    highlightedPlayer = player;
+};
+
+function getHighlightedPlayerName(){
+    return highlightedPlayer;
+};
+
+
+var setButtons = function (scene){
+    // GUI
+    var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var panel = new BABYLON.GUI.StackPanel();    
+    advancedTexture.addControl(panel);  
+
+    const offenseNames = ["LE","OB","LT","LG","C","RG","RT","QB","RE","rlWR","rrWR"]; 
+    const defenseNames = ["drS","dlS","drOLB","dMLB","dlOLB","drDT","dlDT","drDE","dlDE","drCB","dlCB"];
+    const buttons = [];
+
+    const offLen = offenseNames.length;
+    
+
+    /*function handleButtonClick(clickedButton){
+        clickedButton.background = "green";
+    }*/
+
+    for (let i = 0; i < offenseNames.length+defenseNames.length; i++){
+        
+        if (i < offenseNames.length){
+            var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+offenseNames[i], offenseNames[i]);
+            button.width = 0.1;
+            button.left = 400;
+            button.height = "40px";
+            button.color = "white"
+            button.background = "red";
+            (function (currentButton, playerName) {
+                currentButton.onPointerClickObservable.add(() => {
+                    for (let j = 0; j < buttons.length; j++){
+                        if (j < offenseNames.length){
+                            buttons[j].background = "red";
+                        } else {
+                            buttons[j].background = "blue"
+                        }
+                    }
+                    setHighlightedPlayerName(playerName);
+                    currentButton.background = "green";
+                });
+            })(button, offenseNames[i]);
+            buttons.push(button);
+        } else {
+            var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+defenseNames[i-offLen], defenseNames[i-offLen]);
+            button.width = 0.1;
+            button.left = 400;
+            button.height = "40px";
+            button.color = "white"
+            button.background = "blue";
+            (function (currentButton, playerName) {
+                currentButton.onPointerClickObservable.add(() => {
+                    for (let j = 0; j < buttons.length; j++){
+                        if (j < offenseNames.length){
+                            buttons[j].background = "red";
+                        } else {
+                            buttons[j].background = "blue"
+                        }
+                    }
+                    setHighlightedPlayerName(playerName);
+                    currentButton.background = "green";
+                });
+            })(button, defenseNames[i-offLen]);
+            buttons.push(button);
+        }
+
+
+        /*(function (currentButton, playerName) {
+            currentButton.onPointerClickObservable.add(() => {
+                for (let j = 0; j < buttons.length; j++){
+                    buttons[j].background = "red";
+                }
+                setHighlightedPlayerName(playerName);
+                currentButton.background = "green";
+            });
+        })(button, offenseNames[i]);
+        buttons.push(button);*/
+    }
+    for (let i = 0; i < buttons.length; i++){
+        panel.addControl(buttons[i]);
+    }
+
+};
+
+var getRoute = function (routeName){
+
+    const route = [];
+    // {frame: 0, xOff: 0, zOff: 0}
+
+    switch(routeName){
+        case "Comeback":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -2});
+            route.push({frame: 210, xOff: 1, zOff: -1});
+            return route;
+        case "Out":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -4});
+            route.push({frame: 210, xOff: 2, zOff: -4});
+            return route;
+        case "In":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -4});
+            route.push({frame: 210, xOff: -2, zOff: -4});
+            return route;
+        case "Slant":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -2});
+            route.push({frame: 210, xOff: -2, zOff: -4});
+            return route;
+        case "Fly":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 210, xOff: 0, zOff: -4});
+            return route;
+        case "Corner":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -2});
+            route.push({frame: 210, xOff: 1, zOff: -4});
+            return route;
+        case "Post":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -2});
+            route.push({frame: 210, xOff: -1, zOff: -4});
+            return route;
+
+        // Runs
+        case "Sweep":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 50, xOff: -0.25, zOff: 0.1});
+            route.push({frame: 100, xOff: -0.5, zOff: 0.2});
+            route.push({frame: 150, xOff: -0.75, zOff: 0.2});
+            route.push({frame: 210, xOff: -1, zOff: 0.1});
+            return route;
+
+        default:
+            return route;
+    }
+};
+
+var applyPlay = function (player, fps, routeName) {
+
+    const animPlayerX = new BABYLON.Animation("cylAnimation", "position.x", fps, 
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    const animPlayerZ = new BABYLON.Animation("cylAnimation", "position.z", fps, 
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    const xKeys = []; 
+    const zKeys = [];
+
+    // Routes are all offsets from current position
+    var route = getRoute(routeName);
+    console.log(route);
+
+    for (positions in route){
+        console.log(route[positions]);
+        xKeys.push({frame: route[positions]["frame"], value: player.position.x + route[positions]["xOff"]});
+        zKeys.push({frame: route[positions]["frame"], value: player.position.z + route[positions]["zOff"]});
+    }
+
+    animPlayerX.setKeys(xKeys);
+    animPlayerZ.setKeys(zKeys);
+
+    player.animations.push(animPlayerX);
+    player.animations.push(animPlayerZ);
+
+    return;
+};
+
+var setDefensePlayers = function (scene) {
+    // Define colors for players
+    //https://i.imgur.com/aN0RMk4.png
+    var playerMaterial = new BABYLON.StandardMaterial("player_mat", scene);
+    var playerTexture = new BABYLON.Texture("https://i.imgur.com/tOnsj2F.png", scene);
+    playerMaterial.diffuseTexture = playerTexture;
+
+    //Set face colors
+    var faceColors=[];
+    faceColors[1] = new BABYLON.Color3(0.1, 0, 1);
+
+    //set texture for flat side
+    var faceUV =[];
+    faceUV[0] = new BABYLON.Vector4(0,0,1,1);
+    faceUV[2] = new BABYLON.Vector4(0,0,1,1);
+
+    // Build Cylinders (players)
+    var drSCyl = BABYLON.MeshBuilder.CreateCylinder("drS", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    drSCyl.position = new BABYLON.Vector3(1.5, 0.25, -2.5); // (drS)
+    drSCyl.material = playerMaterial;//
+
+    var dlSCyl = BABYLON.MeshBuilder.CreateCylinder("dlS", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dlSCyl.position = new BABYLON.Vector3(-1, 0.25, -2.5); // (dlS)
+    dlSCyl.material = playerMaterial;//
+
+    var drOLBCyl = BABYLON.MeshBuilder.CreateCylinder("drOLB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    drOLBCyl.position = new BABYLON.Vector3(1.1, 0.25, -0.9); // (drOLB)
+    drOLBCyl.material = playerMaterial;//
+
+    var dMLBCyl = BABYLON.MeshBuilder.CreateCylinder("dMLB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dMLBCyl.position = new BABYLON.Vector3(0.1, 0.25, -0.8); // (dMLB)
+    dMLBCyl.material = playerMaterial;//
+
+    var dlOLBCyl = BABYLON.MeshBuilder.CreateCylinder("dlOLB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dlOLBCyl.position = new BABYLON.Vector3(-1, 0.25, -1); // (dlOLB)
+    dlOLBCyl.material = playerMaterial;//
+
+    var drDTCyl = BABYLON.MeshBuilder.CreateCylinder("drDT", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    drDTCyl.position = new BABYLON.Vector3(0.5, 0.25, -0.1); // (drDT)
+    drDTCyl.material = playerMaterial;//
+
+    var dlDTCyl = BABYLON.MeshBuilder.CreateCylinder("dlDT", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dlDTCyl.position = new BABYLON.Vector3(-0.2, 0.25, -0.1); // (dlDT)
+    dlDTCyl.material = playerMaterial;//
+
+    var drDECyl = BABYLON.MeshBuilder.CreateCylinder("drDE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    drDECyl.position = new BABYLON.Vector3(1, 0.25, -0.15); // (drDE)
+    drDECyl.material = playerMaterial;//
+
+    var dlDECyl = BABYLON.MeshBuilder.CreateCylinder("dlDE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dlDECyl.position = new BABYLON.Vector3(-0.8, 0.25, -0.15); // (dlDE)
+    dlDECyl.material = playerMaterial;//
+
+    var drCBCyl = BABYLON.MeshBuilder.CreateCylinder("drCB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    drCBCyl.position = new BABYLON.Vector3(2.5, 0.25, -0.75); // (drCB)
+    drCBCyl.material = playerMaterial;//
+
+    var dlCBCyl = BABYLON.MeshBuilder.CreateCylinder("dlCB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    dlCBCyl.position = new BABYLON.Vector3(-2.4, 0.25, -0.75); // (dlCB)
+    dlCBCyl.material = playerMaterial;//
+
+    var play = {
+        drS: drSCyl,
+        dlS: dlSCyl,
+        drOLB: drOLBCyl,
+        dMLB: dMLBCyl,
+        dlOLB: dlOLBCyl,
+        drDT: drDTCyl,
+        dlDT: dlDTCyl,
+        drDE: drDECyl,
+        dlDE: dlDECyl,
+        drCB: drCBCyl,
+        dlCB: dlCBCyl
+    };
+    return play;
+
+};
+
+var setOffensePlayers = function (scene) {
+    // Define colors for players
+    //https://i.imgur.com/aN0RMk4.png
+    var playerMaterial = new BABYLON.StandardMaterial("player_mat", scene);
+    var playerTexture = new BABYLON.Texture("https://i.imgur.com/aN0RMk4.png", scene);
+    playerMaterial.diffuseTexture = playerTexture;
+
+    //Set face colors
+    var faceColors=[];
+    faceColors[1] = new BABYLON.Color3(255,0,0);
+
+    //set texture for flat side
+    var faceUV =[];
+    faceUV[0] = new BABYLON.Vector4(0,0,1,1);
+    faceUV[2] = new BABYLON.Vector4(0,0,1,1);
+
+    // Build Cylinders (players)
+    var leCyl = BABYLON.MeshBuilder.CreateCylinder("LE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    leCyl.position = new BABYLON.Vector3(2.5, 0.25, 1.2); // (LE)
+    leCyl.material = playerMaterial;
+
+    var obCyl = BABYLON.MeshBuilder.CreateCylinder("OB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    obCyl.position = new BABYLON.Vector3(1, 0.25, 2.2); // (OB)
+    obCyl.material = playerMaterial;
+
+    var ltCyl = BABYLON.MeshBuilder.CreateCylinder("LT", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    ltCyl.position = new BABYLON.Vector3(1.15, 0.25, 1); // (LT)
+    ltCyl.material = playerMaterial;
+
+    var lgCyl = BABYLON.MeshBuilder.CreateCylinder("LG", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    lgCyl.position = new BABYLON.Vector3(0.7, 0.25, 0.8); // (LG)
+    lgCyl.material = playerMaterial;
+
+    var cCyl = BABYLON.MeshBuilder.CreateCylinder("C", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    cCyl.position = new BABYLON.Vector3(0.25, 0.25, 0.6); // (C)
+    cCyl.material = playerMaterial;
+
+    var rgCyl = BABYLON.MeshBuilder.CreateCylinder("RG", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rgCyl.position = new BABYLON.Vector3(-0.2, 0.25, 0.8); // (RG)
+    rgCyl.material = playerMaterial;
+
+    var rtCyl = BABYLON.MeshBuilder.CreateCylinder("RT", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rtCyl.position = new BABYLON.Vector3(-0.65, 0.25, 1); // (RT)
+    rtCyl.material = playerMaterial;
+
+    var qbCyl = BABYLON.MeshBuilder.CreateCylinder("QB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    qbCyl.position = new BABYLON.Vector3(0.25, 0.25, 1.95); // (QB)
+    qbCyl.material = playerMaterial;
+
+    var reCyl = BABYLON.MeshBuilder.CreateCylinder("RE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    reCyl.position = new BABYLON.Vector3(-1.15, 0.25, 1.05); // (RE)
+    reCyl.material = playerMaterial;
+
+    var rlWRCyl = BABYLON.MeshBuilder.CreateCylinder("rlWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rlWRCyl.position = new BABYLON.Vector3(-2.0, 0.25, 1.2); // (rlWR)
+    rlWRCyl.material = playerMaterial;
+
+    var rrWRCyl = BABYLON.MeshBuilder.CreateCylinder("rrWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rrWRCyl.position = new BABYLON.Vector3(-2.5, 0.25, 1.2); // (rrWR)
+    rrWRCyl.material = playerMaterial;
+
+    var play = {
+        LE: leCyl,
+        OB: obCyl,
+        LT: ltCyl,
+        LG: lgCyl,
+        C: cCyl,
+        RG: rgCyl,
+        RT: rtCyl,
+        QB: qbCyl,
+        RE: reCyl,
+        rlWR: rlWRCyl,
+        rrWR: rrWRCyl
+    };
+    return play;
+};
+
+var createScene = function () {
+    // This creates a basic Babylon Scene object (non-mesh)
+    var fps = 60;
+    var scene = new BABYLON.Scene(engine);
+
+    // This creates and positions a free camera (non-mesh)
+    //var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+    
+    /*var camera = new BABYLON.ArcRotateCamera("camera", BABYLON.Tools.ToRadians(90), BABYLON.Tools.ToRadians(65), 10, BABYLON.Vector3.Zero(), scene);
+    // This attaches the camera to the canvas
+    camera.attachControl(canvas, true);
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());*/
+    
+    // Camera follows the selected player (default is Offensive Center)
+    const camera = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0.01, 0.01, -1), scene);
+    camera.radius = 3;
+    camera.heightOffset = 1;
+    camera.rotationOffset = 1;
+    camera.cameraAcceleration = 0.01;
+    camera.maxCameraSpeed = 10;
+    camera.attachControl(canvas, true);
+    camera.cameraDirection = new BABYLON.Vector3(0, 0, -1);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light.intensity = 0.8;
+    const offense = setOffensePlayers(scene);
+    const defense = setDefensePlayers(scene);
+    
+    
+    // Initialize the "animations" property for each player in players
+    initAnimations(offense);
+    initAnimations(defense);
+    // Give specific players certain routes
+    // Player IDs: { LE, OB, LT, LG, C, RG, RT, QB, RE, rlWR, rrWR }
+
+    //applyPlay(offense["QB"], fps, "Sweep");
+    applyPlay(offense["LE"], fps, "Corner");
+    //applyPlay(offense["RE"], fps, "Comeback")
+    
+    
+    camera.lockedTarget = offense["C"];
+
+    // Start all player animations
+    for (player in offense){
+        scene.beginAnimation(offense[player], 0, 210, true);
+    }
+    for (player in defense){
+        scene.beginAnimation(defense[player], 0, 210, true);
+    }
+    
+    setButtons();
+
+    // Our built-in 'ground' shape.
+    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 8, height: 10}, scene);
+
+    scene.registerBeforeRender(function () {
+        console.log("test");
+        console.log(offense["LE"].position);
+        // Switch camera view based on menu selection
+        if (prevHighlightedPlayer !== highlightedPlayer && prevHighlightedPlayer !== "None"){
+            if (highlightedPlayer in offense){
+                camera.lockedTarget = offense[highlightedPlayer];
+            } else if (highlightedPlayer in defense){
+                camera.lockedTarget = defense[highlightedPlayer];
+            }
+        }
+        
+    });
+
+    return scene;
+};
+
+
+
+                window.initFunction = async function() {
+                    
+                    
+                    
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
