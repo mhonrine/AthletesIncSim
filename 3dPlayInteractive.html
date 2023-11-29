@@ -113,7 +113,7 @@ var setButtons = function (scene){
         if (i < offenseNames.length){
             var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+offenseNames[i], offenseNames[i]);
             button.width = 0.1;
-            button.left = 400;
+            button.left = 800;
             button.height = "40px";
             button.color = "white"
             button.background = "red";
@@ -134,7 +134,7 @@ var setButtons = function (scene){
         } else {
             var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+defenseNames[i-offLen], defenseNames[i-offLen]);
             button.width = 0.1;
-            button.left = 400;
+            button.left = 800;
             button.height = "40px";
             button.color = "white"
             button.background = "blue";
@@ -155,20 +155,31 @@ var setButtons = function (scene){
         }
 
 
-        /*(function (currentButton, playerName) {
-            currentButton.onPointerClickObservable.add(() => {
-                for (let j = 0; j < buttons.length; j++){
-                    buttons[j].background = "red";
-                }
-                setHighlightedPlayerName(playerName);
-                currentButton.background = "green";
-            });
-        })(button, offenseNames[i]);
-        buttons.push(button);*/
     }
     for (let i = 0; i < buttons.length; i++){
         panel.addControl(buttons[i]);
     }
+    
+    // Button to return to main menu
+    var menuButton = BABYLON.GUI.Button.CreateSimpleButton("menuButton", "Menu");
+    
+    menuButton.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    menuButton.verticalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_BOTTOM;
+    menuButton.paddingTop = "10px";
+    menuButton.width = "75px";
+    menuButton.height = "50px";
+    menuButton.color = "black";
+    menuButton.thickness = 1;
+    menuButton.background = "white";
+    menuButton.left = "15px";
+    menuButton.top = "600px";
+    
+    // FIXME this needs to be updated to the appropriate menu html page 
+    menuButton.onPointerUpObservable.add(function () { 
+            window.location.href =  
+                "redirectTestSessionStorage.html"; 
+            });
+    advancedTexture.addControl(menuButton);
 
 };
 
@@ -237,7 +248,9 @@ var applyPlay = function (player, fps, routeName) {
     const zKeys = [];
 
     // Routes are all offsets from current position
+    console.log("routeName is "+routeName);
     var route = getRoute(routeName);
+    
     console.log(route);
 
     for (positions in route){
@@ -449,8 +462,18 @@ var createScene = function () {
     // Give specific players certain routes
     // Player IDs: { LE, OB, LT, LG, C, RG, RT, QB, RE, rlWR, rrWR }
 
+    // NEW SESSION STORAGE SET
+    
+    applyPlay(offense["LE"], fps, sessionStorage.getItem("teRoute"));
+    applyPlay(offense["RE"], fps, sessionStorage.getItem("xRoute"));
+    applyPlay(offense["rlWR"], fps, sessionStorage.getItem("yRoute"));
+    applyPlay(offense["rrWR"], fps, sessionStorage.getItem("zRoute"));
+    
+    
+    // END SESSION STORAGE SET
+
     //applyPlay(offense["QB"], fps, "Sweep");
-    applyPlay(offense["LE"], fps, "Corner");
+    //applyPlay(offense["LE"], fps, "Corner");
     //applyPlay(offense["RE"], fps, "Comeback")
     
     
@@ -482,6 +505,10 @@ var createScene = function () {
         }
         
     });
+    
+    
+
+    
 
     return scene;
 };
