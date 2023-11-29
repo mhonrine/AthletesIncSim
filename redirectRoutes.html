@@ -603,8 +603,31 @@ var createScene = function () {
 	var blue = new BABYLON.StandardMaterial("blue", scene);
 	blue.diffuseColor = new BABYLON.Color3(0, 0, 1);
 	blue.emissiveColor = new BABYLON.Color3(0, 0, 1);
-	blue.specularColor = new BABYLON.Color3(0, 0, 1);
-	
+    blue.specularColor = new BABYLON.Color3(0, 0, 1);
+
+    var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    var quizButton = BABYLON.GUI.Button.CreateSimpleButton("but1", "Quiz");
+
+    quizButton.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
+    quizButton.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
+    quizButton.paddingTop = "10px";
+    quizButton.width = "100px";
+    quizButton.height = "50px";
+    quizButton.color = "white";
+    quizButton.thickness = 0;
+    quizButton.background = "red";
+    quizButton.top = "700px";
+
+    advancedTexture.addControl(quizButton);
+
+    quizButton.onPointerUpObservable.add(function () {
+        window.location.href =
+            "quizSessionStorage.html";
+    });
+
+
+
 	// Shapes
 	
 	
