@@ -106,8 +106,10 @@ var setButtons = function (scene){
         
         if (i < offenseNames.length){
             var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+offenseNames[i], offenseNames[i]);
+            button.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_RIGHT;
+            button.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
             button.width = 0.1;
-            button.left = 800;
+            //button.left = 800;
             button.height = "40px";
             button.color = "white"
             button.background = "red";
@@ -127,8 +129,10 @@ var setButtons = function (scene){
             buttons.push(button);
         } else {
             var button = BABYLON.GUI.Button.CreateSimpleButton("button_"+defenseNames[i-offLen], defenseNames[i-offLen]);
+            button.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_RIGHT;
+            button.verticalAlignment = BABYLON.GUI.TextBlock.VERTICAL_ALIGNMENT_TOP;
             button.width = 0.1;
-            button.left = 800;
+            //button.left = 800;
             button.height = "40px";
             button.color = "white"
             button.background = "blue";
@@ -155,7 +159,7 @@ var setButtons = function (scene){
     }
     
     // Button to return to main menu
-    var menuButton = BABYLON.GUI.Button.CreateSimpleButton("menuButton", "Menu");
+    var menuButton = BABYLON.GUI.Button.CreateSimpleButton("menuButton", "Quiz");
     
     menuButton.horizontalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
     menuButton.verticalAlignment = BABYLON.GUI.TextBlock.HORIZONTAL_ALIGNMENT_BOTTOM;
@@ -171,7 +175,7 @@ var setButtons = function (scene){
     // FIXME this needs to be updated to the appropriate menu html page 
     menuButton.onPointerUpObservable.add(function () { 
             window.location.href =  
-                "redirectTestSessionStorage.html"; 
+                "quizSessionStorage..html"; 
             });
     advancedTexture.addControl(menuButton);
 
