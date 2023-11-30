@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>Babylon.js sample code</title>
+        <title>3D Route Viewer</title>
 
         <!-- Babylon.js -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
@@ -61,13 +61,7 @@
         var scene = null;
         var sceneToRender = null;
         var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
-        /*
-    TODO:
-    - Explore Viewports and MultiViews for the camera
-    - Add button to bottom of screen to select camera
-    - Start button ? --> would change the animation start time
-    - Actively selected player-cam should highlight green on top flat side
-*/
+
 
 
 var initAnimations = function (players){
@@ -97,7 +91,7 @@ var setButtons = function (scene){
     var panel = new BABYLON.GUI.StackPanel();    
     advancedTexture.addControl(panel);  
 
-    const offenseNames = ["LE","OB","LT","LG","C","RG","RT","QB","RE","rlWR","rrWR"]; 
+    const offenseNames = ["lTE","OB","LT","LG","C","RG","RT","QB","rTE","lWR","rWR"]; 
     const defenseNames = ["drS","dlS","drOLB","dMLB","dlOLB","drDT","dlDT","drDE","dlDE","drCB","dlCB"];
     const buttons = [];
 
@@ -183,16 +177,21 @@ var setButtons = function (scene){
 
 };
 
-var getRoute = function (routeName){
+var getRoute = function (routeName, pName){
 
     const route = [];
     // {frame: 0, xOff: 0, zOff: 0}
+    var mir = 1; // mirror: 1 indicates to go standard direction, -1 goes opposite (left/right)
+    if (pName === "rWR" || pName === "rTE"){
+        mir = -1;
+    }
+
 
     switch(routeName){
         case "Comeback":
             route.push({frame: 0, xOff: 0, zOff: 0});
             route.push({frame: 100, xOff: 0, zOff: -2});
-            route.push({frame: 210, xOff: 1, zOff: -1});
+            route.push({frame: 210, xOff: -1*mir, zOff: -1});
             return route;
         case "Out":
             route.push({frame: 0, xOff: 0, zOff: 0});
@@ -207,9 +206,9 @@ var getRoute = function (routeName){
         case "Slant":
             route.push({frame: 0, xOff: 0, zOff: 0});
             route.push({frame: 100, xOff: 0, zOff: -2});
-            route.push({frame: 210, xOff: -2, zOff: -4});
+            route.push({frame: 210, xOff: -2*mir, zOff: -4});
             return route;
-        case "Fly":
+        case "Go":
             route.push({frame: 0, xOff: 0, zOff: 0});
             route.push({frame: 210, xOff: 0, zOff: -4});
             return route;
@@ -222,6 +221,16 @@ var getRoute = function (routeName){
             route.push({frame: 0, xOff: 0, zOff: 0});
             route.push({frame: 100, xOff: 0, zOff: -2});
             route.push({frame: 210, xOff: -1, zOff: -4});
+            return route;
+        case "Quick Out":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 70, xOff: 0, zOff: -1});
+            route.push({frame: 210, xOff: 2*mir, zOff: -1});
+            return route;
+        case "Curl":
+            route.push({frame: 0, xOff: 0, zOff: 0});
+            route.push({frame: 100, xOff: 0, zOff: -2});
+            route.push({frame: 210, xOff: 1*mir, zOff: -1});
             return route;
 
         // Runs
@@ -238,7 +247,7 @@ var getRoute = function (routeName){
     }
 };
 
-var applyPlay = function (player, fps, routeName) {
+var applyPlay = function (player, pName, fps, routeName) {
 
     const animPlayerX = new BABYLON.Animation("cylAnimation", "position.x", fps, 
     BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
@@ -249,7 +258,7 @@ var applyPlay = function (player, fps, routeName) {
 
     // Routes are all offsets from current position
     console.log("routeName is "+routeName);
-    var route = getRoute(routeName);
+    var route = getRoute(routeName, pName);
     
     console.log(route);
 
@@ -363,12 +372,12 @@ var setOffensePlayers = function (scene) {
     faceUV[2] = new BABYLON.Vector4(0,0,1,1);
 
     // Build Cylinders (players)
-    var leCyl = BABYLON.MeshBuilder.CreateCylinder("LE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
-    leCyl.position = new BABYLON.Vector3(2.5, 0.25, 1.2); // (LE)
-    leCyl.material = playerMaterial;
+    var lteCyl = BABYLON.MeshBuilder.CreateCylinder("lTE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    lteCyl.position = new BABYLON.Vector3(1.75, 0.25, 1.1); // (lTE)
+    lteCyl.material = playerMaterial;
 
     var obCyl = BABYLON.MeshBuilder.CreateCylinder("OB", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
-    obCyl.position = new BABYLON.Vector3(1, 0.25, 2.2); // (OB)
+    obCyl.position = new BABYLON.Vector3(1, 0.25, 2.0); // (OB)
     obCyl.material = playerMaterial;
 
     var ltCyl = BABYLON.MeshBuilder.CreateCylinder("LT", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
@@ -395,20 +404,20 @@ var setOffensePlayers = function (scene) {
     qbCyl.position = new BABYLON.Vector3(0.25, 0.25, 1.95); // (QB)
     qbCyl.material = playerMaterial;
 
-    var reCyl = BABYLON.MeshBuilder.CreateCylinder("RE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
-    reCyl.position = new BABYLON.Vector3(-1.15, 0.25, 1.05); // (RE)
-    reCyl.material = playerMaterial;
+    var rteCyl = BABYLON.MeshBuilder.CreateCylinder("rTE", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rteCyl.position = new BABYLON.Vector3(-1.6, 0.25, 1.2); // (rTE)
+    rteCyl.material = playerMaterial;
 
-    var rlWRCyl = BABYLON.MeshBuilder.CreateCylinder("rlWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
-    rlWRCyl.position = new BABYLON.Vector3(-2.0, 0.25, 1.2); // (rlWR)
-    rlWRCyl.material = playerMaterial;
+    var lWRCyl = BABYLON.MeshBuilder.CreateCylinder("lWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    lWRCyl.position = new BABYLON.Vector3(2.75, 0.25, 1.0); // (lWR)
+    lWRCyl.material = playerMaterial;
 
-    var rrWRCyl = BABYLON.MeshBuilder.CreateCylinder("rrWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
-    rrWRCyl.position = new BABYLON.Vector3(-2.5, 0.25, 1.2); // (rrWR)
-    rrWRCyl.material = playerMaterial;
+    var rWRCyl = BABYLON.MeshBuilder.CreateCylinder("rWR", {height: 0.4, diameter: 0.20, segments: 32, faceColors: faceColors, faceUV: faceUV}, scene);
+    rWRCyl.position = new BABYLON.Vector3(-2.5, 0.25, 1.0); // (rWR)
+    rWRCyl.material = playerMaterial;
 
     var play = {
-        LE: leCyl,
+        lTE: lteCyl,
         OB: obCyl,
         LT: ltCyl,
         LG: lgCyl,
@@ -416,9 +425,9 @@ var setOffensePlayers = function (scene) {
         RG: rgCyl,
         RT: rtCyl,
         QB: qbCyl,
-        RE: reCyl,
-        rlWR: rlWRCyl,
-        rrWR: rrWRCyl
+        rTE: rteCyl,
+        lWR: lWRCyl,
+        rWR: rWRCyl
     };
     return play;
 };
@@ -460,21 +469,21 @@ var createScene = function () {
     initAnimations(offense);
     initAnimations(defense);
     // Give specific players certain routes
-    // Player IDs: { LE, OB, LT, LG, C, RG, RT, QB, RE, rlWR, rrWR }
+    // Player IDs: { lTE, OB, LT, LG, C, RG, RT, QB, rTE, lWR, rWR }
 
     // NEW SESSION STORAGE SET
     
-    applyPlay(offense["LE"], fps, sessionStorage.getItem("teRoute"));
-    applyPlay(offense["RE"], fps, sessionStorage.getItem("xRoute"));
-    applyPlay(offense["rlWR"], fps, sessionStorage.getItem("yRoute"));
-    applyPlay(offense["rrWR"], fps, sessionStorage.getItem("zRoute"));
+    applyPlay(offense["rTE"], "rTE", fps, sessionStorage.getItem("teRoute"));
+    applyPlay(offense["lTE"], "lTE", fps, sessionStorage.getItem("xRoute"));
+    applyPlay(offense["lWR"], "lWR", fps, sessionStorage.getItem("yRoute"));
+    applyPlay(offense["rWR"], "rWR", fps, sessionStorage.getItem("zRoute"));
     
     
     // END SESSION STORAGE SET
 
     //applyPlay(offense["QB"], fps, "Sweep");
-    //applyPlay(offense["LE"], fps, "Corner");
-    //applyPlay(offense["RE"], fps, "Comeback")
+    //applyPlay(offense["lTE"], fps, "Corner");
+    //applyPlay(offense["rTE"], fps, "Comeback")
     
     
     camera.lockedTarget = offense["C"];
@@ -494,7 +503,7 @@ var createScene = function () {
 
     scene.registerBeforeRender(function () {
         console.log("test");
-        console.log(offense["LE"].position);
+        console.log(offense["lTE"].position);
         // Switch camera view based on menu selection
         if (prevHighlightedPlayer !== highlightedPlayer && prevHighlightedPlayer !== "None"){
             if (highlightedPlayer in offense){
